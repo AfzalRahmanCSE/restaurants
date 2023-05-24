@@ -25,6 +25,7 @@ app.use(express.json())
 
 app.use('/restaurants',restaurants)
 
+
 app.get('*',(req,res)=>{
     res.send('Page Not Found')
 })
