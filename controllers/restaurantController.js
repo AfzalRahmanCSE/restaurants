@@ -48,30 +48,62 @@ const distance = R * c;
 return distance;
 }
 
+function calculateAverage(array) {
+    if (array.length === 0) {
+      return 0;
+    }
+  
+    const sum = array.reduce((accumulator, currentValue) => accumulator + currentValue);
+    const average = sum / array.length;
+    return average;
+  }
+
 const restaurantsNearBy=async (req,res)=>{
     
     const {Latitude,Longitude,Radius}=req.body
-    console.log(Latitude,Longitude,Radius)
     const data=await restaurantModel.find()
 
     const nearByRestaurants=[]
      
 
-    data.forEach((data)=>{
-       const distance=calculateDistance(Latitude,Longitude,data.location_of_restaurant.latitude,data.location_of_restaurant.longitude)
-
+    data.forEach((data1)=>{
+       const distance=calculateDistance(Latitude,Longitude,data1.location_of_restaurant.latitude,data1.location_of_restaurant.longitude)
+       const data={...data1._doc}
+       
+       if(data.ratings.length>0){
+            data.noOfRatings=data.ratings.length
+           data.avgRating=calculateAverage(data.ratings)
+        }
+        else{
+            data.noOfRatings=0;
+            data.avgRating='Be The First one to Rate'
+        }
+       
        if(distance.toFixed(2)<Radius)
        nearByRestaurants.push(data)
+       delete data.ratings
+       
         
     })
-    console.log(nearByRestaurants.length)
     const numberOfRestaurants=nearByRestaurants.length;
     const outputdata={count:numberOfRestaurants,list:nearByRestaurants}
     res.status(200).json(outputdata)
+}
+const addRating=async (req,res)=>{
+    const {rating}=req.body;
+    const restaurantId=req.params.restaurantId;
+
+    const data= await restaurantModel.findOne({_id:restaurantId})
+    data.ratings.push(rating)
+
+    const revisedData=await restaurantModel.updateOne({_id:restaurantId},{$set:data})
+    res.status(200).send('Thanks for rating')
+
 }
 
 module.exports={
     addRestaurant,
     getAllRestaurants,
-    restaurantsNearBy
+    restaurantsNearBy,
+    addRating
 }
